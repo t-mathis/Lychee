@@ -622,9 +622,9 @@ final class Album {
 			// Convert photoIDs to a string
 			$photoIDs = implode(',', $photoIDs);
 
-			// Delete all photos
+			// Move all photos to 'unsorted' album.
 			$photo = new Photo($photoIDs);
-			if ($photo->delete()!==true) return false;
+			if($photo->clearAlbum() !== true) return false;
 
 		}
 

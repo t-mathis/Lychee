@@ -1161,7 +1161,10 @@ final class Photo {
 
 		if ($result===false) return false;
 		return true;
-
+	}
+        
+	function clearAlbum() {
+		return $this->setAlbum(0);
 	}
 
 	/**

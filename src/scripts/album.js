@@ -169,12 +169,9 @@ album.delete = function(albumIDs) {
 					albums.deleteByID(id)
 				})
 
-			} else {
-
-				albums.refresh()
-				lychee.goto()
-
 			}
+			albums.refresh()
+			lychee.goto()
 
 			if (data!==true) lychee.error(null, params, data)
 
@@ -193,7 +190,7 @@ album.delete = function(albumIDs) {
 
 		let albumTitle = ''
 
-		action.title = 'Delete Album and Photos'
+		action.title = 'Delete Album'
 		cancel.title = 'Keep Album'
 
 		// Get title
@@ -203,14 +200,14 @@ album.delete = function(albumIDs) {
 		// Fallback for album without a title
 		if (albumTitle==='') albumTitle = 'Untitled'
 
-		msg = lychee.html`<p>Are you sure you want to delete the album '$${ albumTitle }' and all of the photos it contains? This action can't be undone!</p>`
+		msg = lychee.html`<p>Are you sure you want to delete the album '$${ albumTitle }'? This action can't be undone!</p>`
 
 	} else {
 
-		action.title = 'Delete Albums and Photos'
+		action.title = 'Delete Albums'
 		cancel.title = 'Keep Albums'
 
-		msg = lychee.html`<p>Are you sure you want to delete all $${ albumIDs.length } selected albums and all of the photos they contain? This action can't be undone!</p>`
+		msg = lychee.html`<p>Are you sure you want to delete all $${ albumIDs.length } selected albums? This action can't be undone!</p>`
 
 	}
 

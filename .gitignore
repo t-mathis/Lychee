@@ -17,3 +17,4 @@ plugins/*
 
 !plugins/Diagnostics/
 !plugins/Log/
+/nbproject/private/
