@@ -76,6 +76,7 @@
 
 	// Album -------------------------------------------------------------- //
 	.album  {
+                z-index: 1;
 		img:first-child,
 		img:nth-child(2) {
 			transform: rotate(0) translateY(0) translateX(0);
@@ -99,6 +100,11 @@
 			transform: rotate(5deg) translateY(-8px) translateX(12px);
 		}
 	}
+        .albums {
+            width:100%;
+            display: flex;
+            z-index:0;
+        }
 
 	// Overlay -------------------------------------------------------------- //
 	.album .overlay,

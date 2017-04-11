@@ -49,7 +49,7 @@ view.albums = {
 				})
 
 				// Add divider
-				if (lychee.publicMode===false) albumsData = build.divider('Albums') + albumsData
+				if (lychee.publicMode===false) albumsData = build.divider('Albums') + build.albums(albumsData)
 
 			}
 

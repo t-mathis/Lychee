@@ -100,7 +100,10 @@ $(document).ready(function() {
 
 		// Context Menu
 		.on('contextmenu', '.photo', function(e) { contextMenu.photo(photo.getID(), e) })
-		.on('contextmenu', '.album', function(e) { contextMenu.album(album.getID(), e) })
+		.on('contextmenu', '.album', function(e) { e.stopPropagation(); contextMenu.album(album.getID(), e);})
+        
+        
+		.on('contextmenu', '.albums', function(e) { contextMenu.albums(e);})
 
 		// Upload
 		.on('change', '#upload_files', function() { basicModal.close(); upload.start.local(this.files) })
