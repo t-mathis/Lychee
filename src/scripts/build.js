@@ -212,24 +212,19 @@ build.uploadModal = function(title, files) {
 
 }
 
-build.tags = function(tags) {
-
-	let html = ''
-
-	if (tags!=='') {
-
-		tags = tags.split(',')
-
-		tags.forEach(function(tag, index, array) {
-			html += lychee.html`<a class='tag'>$${ tag }<span data-index='$${ index }'>${ build.iconic('x') }</span></a>`
-		})
-
-	} else {
-
-		html = `<div class='empty'>No Tags</div>`
-
-	}
-
-	return html
-
+build.tags = function(tags, editable) {
+    let html = '';
+    if (tags !== '') {
+        tags = tags.split(',');
+        tags.forEach(function(tag, index, array) {
+            if (editable) {
+                html += lychee.html`<a class='tag'>$${ tag }<span data-index='$${ index }'>${ build.iconic('x') }</span></a>`
+            } else {
+                html += lychee.html`<a class='tag'>$${ tag }</a>`
+            }
+        });
+    } else {
+        html = `<div class='empty'> No Tags </div>`;
+    }
+    return html;
 }

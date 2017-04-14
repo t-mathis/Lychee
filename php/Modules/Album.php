@@ -83,128 +83,120 @@ final class Album {
 
 	}
         
-        public static function prepareDataTag($tag) {
+    public static function prepareDataTag($tag) {
+        $album = array(
+            'id' => $tag,
+            'title' => $tag,
+            'tags' => $tag,
+            'public' => 0
+        );
 
-		// Init
-		$album = null;
+        return $album;
+    }
 
-		// Set unchanged attributes
-		$album['id']     = $tag;
-		$album['title']     = $tag;
-		$album['public'] = 0;
+    /**
+     * @return array|false Returns an array of photos and album information or false on failure.
+     */
+    public function get() {
+        // Check dependencies
+        Validator::required(isset($this->albumIDs), __METHOD__);
 
-		return $album;
+        // Call plugins
+        Plugins::get()->activate(__METHOD__, 0, func_get_args());
 
-	}
+        // Get album information
+        switch ($this->albumIDs) {
+            case 'f':
+                $return['public'] = '0';
+                $query = Database::prepare(Database::get(), "SELECT id, title, tags, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE star = 1 " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
+                break;
+            case 's':
+                $return['public'] = '0';
+                $query = Database::prepare(Database::get(), "SELECT id, title, tags, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE public = 1 " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
+                break;
+            case 'r':
+                $return['public'] = '0';
+                $query = Database::prepare(Database::get(), "SELECT id, title, tags, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE LEFT(id, 10) >= unix_timestamp(DATE_SUB(NOW(), INTERVAL 1 DAY)) " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
+                break;
+            case '0':
+                $return['public'] = '0';
+                $query = Database::prepare(Database::get(), "SELECT id, title, tags, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE album = 0 " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
+                break;
+            default:
+                if (substr($this->albumIDs, 0, 3) == 'tag') {
+                    $this->albumIDs = urldecode($this->albumIDs);
+                    $tag = explode("-", $this->albumIDs)[1];
+                    $return = Album::prepareDataTag($tag);
+                    $query = Database::prepare(Database::get(), "SELECT id, title, tags, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE find_in_set('?', tags )" . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS, $tag));
+                    break;
+                } else {
+                    $query = Database::prepare(Database::get(), "SELECT * FROM ? WHERE id = '?' LIMIT 1", array(LYCHEE_TABLE_ALBUMS, $this->albumIDs));
+                    $albums = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
+                    $return = $albums->fetch_assoc();
+                    $return = Album::prepareData($return);
+                    $query = Database::prepare(Database::get(), "SELECT id, title, tags, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE album = '?' " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS, $this->albumIDs));
+                    break;
+                }
+        }
 
-	/**
-	 * @return array|false Returns an array of photos and album information or false on failure.
-	 */
-	public function get() {
-            
-		// Check dependencies
-		Validator::required(isset($this->albumIDs), __METHOD__);
+        // Get photos
+        $photos = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
+        $previousPhotoID = '';
 
-		// Call plugins
-		Plugins::get()->activate(__METHOD__, 0, func_get_args());
+        if ($photos === false) return false;
 
-		// Get album information
-		switch ($this->albumIDs) {
+        $tags = array();
 
-			case 'f':
-				$return['public'] = '0';
-				$query = Database::prepare(Database::get(), "SELECT id, title, tags, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE star = 1 " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
-				break;
+        while ($photo = $photos->fetch_assoc()) {
+            foreach (explode(',', $photo['tags']) as $tag) {
+                if (!in_array($tag, $tags) && strlen($tag) > 0) {
+                    $tags[] = $tag;
+                }
+            }
 
-			case 's':
-				$return['public'] = '0';
-				$query = Database::prepare(Database::get(), "SELECT id, title, tags, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE public = 1 " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
-				break;
+            // Turn data from the database into a front-end friendly format
+            $photo = Photo::prepareData($photo);
 
-			case 'r':
-				$return['public'] = '0';
-				$query = Database::prepare(Database::get(), "SELECT id, title, tags, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE LEFT(id, 10) >= unix_timestamp(DATE_SUB(NOW(), INTERVAL 1 DAY)) " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
-				break;
+            // Set previous and next photoID for navigation purposes
+            $photo['previousPhoto'] = $previousPhotoID;
+            $photo['nextPhoto'] = '';
 
-			case '0':
-				$return['public'] = '0';
-				$query = Database::prepare(Database::get(), "SELECT id, title, tags, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE album = 0 " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
-				break;
+            // Set current photoID as nextPhoto of previous photo
+            if ($previousPhotoID !== '') $return['content'][$previousPhotoID]['nextPhoto'] = $photo['id'];
+            $previousPhotoID = $photo['id'];
 
-			default:
-                            if(substr($this->albumIDs, 0,3) == 'tag') {
-                                $this->albumIDs = urldecode($this->albumIDs);
-                                $tag = explode("-",$this->albumIDs)[1];
-				$return = Album::prepareDataTag($tag);
-				$query  = Database::prepare(Database::get(), "SELECT id, title, tags, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE find_in_set('?', tags )" . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS, $tag));
-				break;
-                            } else {
-                                $query  = Database::prepare(Database::get(), "SELECT * FROM ? WHERE id = '?' LIMIT 1", array(LYCHEE_TABLE_ALBUMS, $this->albumIDs));
-				$albums = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
-				$return = $albums->fetch_assoc();
-				$return = Album::prepareData($return);
-				$query  = Database::prepare(Database::get(), "SELECT id, title, tags, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE album = '?' " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS, $this->albumIDs));
-				break;
-                            }
-				
+            // Add to return
+            $return['content'][$photo['id']] = $photo;
+        }
 
-		}
+        if ($photos->num_rows === 0) {
+            // Album empty
+            $return['content'] = false;
+        } else {
+            // Enable next and previous for the first and last photo
+            $lastElement = end($return['content']);
+            $lastElementId = $lastElement['id'];
+            $firstElement = reset($return['content']);
+            $firstElementId = $firstElement['id'];
 
-		// Get photos
-		$photos          = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
-		$previousPhotoID = '';
+            if ($lastElementId !== $firstElementId) {
+                $return['content'][$lastElementId]['nextPhoto'] = $firstElementId;
+                $return['content'][$firstElementId]['previousPhoto'] = $lastElementId;
+            }
+        }
 
-		if ($photos===false) return false;
+        asort($tags);
+        $return['id'] = $this->albumIDs;
+        $return['num'] = $photos->num_rows;
+        $return['tags'] = implode(',', $tags);
 
-		while ($photo = $photos->fetch_assoc()) {
+        // Call plugins
+        Plugins::get()->activate(__METHOD__, 1, func_get_args());
 
-			// Turn data from the database into a front-end friendly format
-			$photo = Photo::prepareData($photo);
+        return $return;
+    }
 
-			// Set previous and next photoID for navigation purposes
-			$photo['previousPhoto'] = $previousPhotoID;
-			$photo['nextPhoto']     = '';
-
-			// Set current photoID as nextPhoto of previous photo
-			if ($previousPhotoID!=='') $return['content'][$previousPhotoID]['nextPhoto'] = $photo['id'];
-			$previousPhotoID = $photo['id'];
-
-			// Add to return
-			$return['content'][$photo['id']] = $photo;
-
-		}
-
-		if ($photos->num_rows===0) {
-
-			// Album empty
-			$return['content'] = false;
-
-		} else {
-
-			// Enable next and previous for the first and last photo
-			$lastElement    = end($return['content']);
-			$lastElementId  = $lastElement['id'];
-			$firstElement   = reset($return['content']);
-			$firstElementId = $firstElement['id'];
-
-			if ($lastElementId!==$firstElementId) {
-				$return['content'][$lastElementId]['nextPhoto']      = $firstElementId;
-				$return['content'][$firstElementId]['previousPhoto'] = $lastElementId;
-			}
-
-		}
-
-		$return['id']  = $this->albumIDs;
-		$return['num'] = $photos->num_rows;
-
-		// Call plugins
-		Plugins::get()->activate(__METHOD__, 1, func_get_args());
-
-		return $return;
-
-	}
-
-	/**
+    /**
 	 * Starts a download of an album.
 	 * @return resource|boolean Sends a ZIP-file or returns false on failure.
 	 */

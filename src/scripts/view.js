@@ -417,7 +417,7 @@ view.photo = {
 
 	tags: function() {
 
-		sidebar.changeAttr('tags', build.tags(photo.json.tags), true)
+		sidebar.changeAttr('tags', build.tags(photo.json.tags, true), true)
 		sidebar.bind()
 
 	},

@@ -161,7 +161,7 @@ sidebar.createStructure.photo = function(data) {
 		structure.tags = {
 			title : 'Tags',
 			type  : sidebar.types.TAGS,
-			value : build.tags(data.tags),
+			value : build.tags(data.tags, editable),
 			editable
 		}
 
@@ -305,11 +305,28 @@ sidebar.createStructure.album = function(data) {
 			{ title: 'Password',     value: password }
 		]
 	}
+        
+        // Only create tags section when user logged in
+	if (lychee.publicMode===false) {
+
+		structure.tags = {
+			title : 'Tags',
+			type  : sidebar.types.TAGS,
+			value : build.tags(data.tags, false),
+			false
+		}
+
+	} else {
+
+		structure.tags = {}
+
+	}
 
 	// Construct all parts of the structure
 	structure = [
 		structure.basics,
 		structure.album,
+                structure.tags,
 		structure.share
 	]
 
