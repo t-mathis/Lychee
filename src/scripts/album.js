@@ -8,17 +8,17 @@ album = {
 }
 
 album.isTagID = function (id) {
-    return id.startsWith('tag');
+    return id && id.indexOf('tag') > -1;
 }
 
 album.isSmartID = function (id) {
-    return album.smartIDs.indexOf(id) > -1;
+    return id && album.smartIDs.indexOf(id) > -1;
 }
 
 album.getID = function() {
     let id = null;
     let isID = (id) => {
-        return album.isTagID(id) || album.isSmartID(id) || $.isNumeric(id);
+        return album.isSmartID(id) || album.isTagID(id) || $.isNumeric(id);
     };
     
     if (photo.json) {
