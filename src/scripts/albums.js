@@ -23,6 +23,9 @@ albums.load = function() {
 			// Smart Albums
 			if (lychee.publicMode===false) albums._createSmartAlbums(data.smartalbums)
 
+			// Tag Albums
+			if (lychee.publicMode===false) albums._createTagAlbums(data.tags)
+
 			albums.json = data
 
 			// Calculate delay
@@ -101,6 +104,21 @@ albums._createSmartAlbums = function(data) {
 		thumbs  : data.recent.thumbs
 	}
 
+}
+
+albums._createTagAlbums = function(data) {
+
+        for (var property in data) {
+            if (data.hasOwnProperty(property)) {
+                data[property] = {
+                        id       : "tag-" + property,
+                        title    : property,
+                        sysdate  : data[property].num + ' photos',
+                        thumbs   : data[property].thumbs,
+                        tag      : '1'
+                }
+            }
+        }
 }
 
 albums.getByID = function(albumID) {

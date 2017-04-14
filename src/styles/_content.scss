@@ -103,6 +103,7 @@
         .albums {
             width:100%;
             display: flex;
+            flex-wrap: wrap;
             z-index:0;
         }
 

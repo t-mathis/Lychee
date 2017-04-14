@@ -41,12 +41,16 @@ if (!empty($fn)) {
 	date_default_timezone_set('UTC');
 
 	// Validate parameters
-	if (isset($_POST['albumIDs'])&&Validator::isAlbumIDs($_POST['albumIDs'])===false) Response::error('Wrong parameter type for albumIDs!');
-	if (isset($_POST['photoIDs'])&&Validator::isPhotoIDs($_POST['photoIDs'])===false) Response::error('Wrong parameter type for photoIDs!');
-	if (isset($_POST['albumID'])&&Validator::isAlbumID($_POST['albumID'])==false)     Response::error('Wrong parameter type for albumID!');
-	if (isset($_POST['photoID'])&&Validator::isPhotoID($_POST['photoID'])==false)     Response::error('Wrong parameter type for photoID!');
+	if (isset($_POST['albumIDs']) && Validator::isAlbumIDs($_POST['albumIDs']) === false)
+            Response::error('Wrong parameter type for albumIDs!');
+        if (isset($_POST['photoIDs']) && Validator::isPhotoIDs($_POST['photoIDs']) === false)
+            Response::error('Wrong parameter type for photoIDs!');
+        if (isset($_POST['albumID']) && (Validator::isAlbumID($_POST['albumID']) == false && Validator::isTagID($_POST['albumID']) == false))
+            Response::error('Wrong parameter type for albumID!');
+        if (isset($_POST['photoID']) && Validator::isPhotoID($_POST['photoID']) == false)
+            Response::error('Wrong parameter type for photoID!');
 
-	// Check if a configuration exists
+    // Check if a configuration exists
 	if (Config::exists()===false) {
 
 		/**

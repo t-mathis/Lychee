@@ -3,30 +3,39 @@
  */
 
 album = {
+    smartIDs: ['0', 'f', 's', 'r'],
+    json: null
+}
 
-	json: null
+album.isTagID = function (id) {
+    return id.startsWith('tag');
+}
 
+album.isSmartID = function (id) {
+    return album.smartIDs.indexOf(id) > -1;
 }
 
 album.getID = function() {
+    let id = null;
+    let isID = (id) => {
+        return album.isTagID(id) || album.isSmartID(id) || $.isNumeric(id);
+    };
+    
+    if (photo.json) {
+        id = photo.json.album;
+    } else if (album.json) {
+        id = album.json.id;
+    }
 
-	let id = null
-
-	let isID = (id) => {
-		if (id==='0' || id==='f' || id==='s' || id==='r') return true
-		return $.isNumeric(id)
-	}
-
-	if (photo.json)      id = photo.json.album
-	else if (album.json) id = album.json.id
-
-	// Search
-	if (isID(id)===false) id = $('.album:hover, .album.active').attr('data-id')
-	if (isID(id)===false) id = $('.photo:hover, .photo.active').attr('data-album-id')
-
-	if (isID(id)===true) return id
-	else                 return false
-
+    // Search
+    if (isID(id)===false) {
+        id = $('.album:hover, .album.active').attr('data-id');
+    }
+    if (isID(id)===false) {
+        id = $('.photo:hover, .photo.active').attr('data-album-id');
+    }
+    
+    return (isID(id)) ? id : false;
 }
 
 album.load = function(albumID, refresh = false) {
@@ -41,9 +50,9 @@ album.load = function(albumID, refresh = false) {
 			albumID,
 			password: password.value
 		}
-
+                
 		api.post('Album::get', params, function(data) {
-
+                    
 			let waitTime = 0
 
 			if (data==='Warning: Album private!') {
@@ -94,13 +103,12 @@ album.load = function(albumID, refresh = false) {
 }
 
 album.parse = function() {
-
-	if (!album.json.title) album.json.title = 'Untitled'
-
+    if (!album.json.title) 
+        album.json.title = 'Untitled'
 }
 
 album.add = function() {
-
+    
 	const action = function(data) {
 
 		let title = data.title

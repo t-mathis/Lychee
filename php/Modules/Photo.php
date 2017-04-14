@@ -685,6 +685,7 @@ final class Photo {
 
 		// Excepts the following:
 		// (string) $albumID = Album which is currently visible to the user
+                $albumID = urldecode($albumID);
 
 		// Check dependencies
 		Validator::required(isset($this->photoIDs), __METHOD__);

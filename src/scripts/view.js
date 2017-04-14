@@ -25,8 +25,9 @@ view.albums = {
 
 		init: function() {
 
-			let smartData  = ''
-			let albumsData = ''
+			let smartData = '';
+			let albumsData = '';
+                        let tagsData = '';
 
 			// Smart Albums
 			if (lychee.publicMode===false) {
@@ -36,7 +37,11 @@ view.albums = {
 				albums.parse(albums.json.smartalbums.starred)
 				albums.parse(albums.json.smartalbums.recent)
 
-				smartData = build.divider('Smart Albums') + build.album(albums.json.smartalbums.unsorted) + build.album(albums.json.smartalbums.public) + build.album(albums.json.smartalbums.starred) + build.album(albums.json.smartalbums.recent)
+				smartData = build.divider('Smart Albums') +
+                                        build.album(albums.json.smartalbums.unsorted) + 
+                                        build.album(albums.json.smartalbums.public) + 
+                                        build.album(albums.json.smartalbums.starred) + 
+                                        build.album(albums.json.smartalbums.recent);
 
 			}
 
@@ -53,11 +58,24 @@ view.albums = {
 
 			}
 
-			if (smartData==='' && albumsData==='') {
+			// Tags
+			if (albums.json.tags && Object.keys(albums.json.tags).length > 0) {
+
+				$.each(albums.json.tags, function() {
+					albums.parse(this)
+					tagsData += build.album(this)
+				})
+
+				// Add divider
+				if (lychee.publicMode===false) tagsData = build.divider('Tags') + build.albums(tagsData)
+
+			}
+
+			if (smartData==='' && albumsData==='' && tagsData==='') {
 				lychee.content.html('')
 				$('body').append(build.no_content('eye'))
 			} else {
-				lychee.content.html(smartData + albumsData)
+				lychee.content.html(smartData + albumsData + tagsData)
 			}
 
 			// Restore scroll position

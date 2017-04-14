@@ -30,6 +30,9 @@ final class Albums {
 
 		// Get SmartAlbums
 		if ($public===false) $return['smartalbums'] = $this->getSmartAlbums();
+                
+		// Get TagAlbums
+		if ($public===false) $return['tags'] = $this->getTagAlbums();
 
 		// Albums query
 		if ($public===false) $query = Database::prepare(Database::get(), 'SELECT id, title, public, sysstamp, password FROM ? ' . Settings::get()['sortingAlbums'], array(LYCHEE_TABLE_ALBUMS));
@@ -185,6 +188,38 @@ final class Albums {
 		return $return;
 
 	}
+        
+        private function getTagAlbums() {
+                // Initialize return var
+                $return = array();
+
+		$query  = Database::prepare(Database::get(), 'SELECT tags, thumbUrl FROM ? WHERE public = 0 and tags != "" ' . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
+		$tags = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
+
+		if ($tags === false) return false;
+
+                while($row3 = $tags->fetch_object()) {
+                        $tempTags = explode(',',$row3->tags);
+                        foreach($tempTags as $tempTag) {
+                            if(array_key_exists($tempTag, $return)) {
+                                $return[$tempTag]['num']++;
+                                if(count($return[$tempTag]['thumbs']) < 3) {
+                                    $return[$tempTag]['thumbs'][] = LYCHEE_URL_UPLOADS_THUMB . $row3->thumbUrl;
+                                }
+                            } else {
+                                $return[$tempTag] = array(
+                                    'thumbs' => array(LYCHEE_URL_UPLOADS_THUMB . $row3->thumbUrl),
+                                    'num'    => 1
+                                );
+                            }
+                        }
+		}
+                
+                ksort($return);
+                
+                // Return Tags
+		return $return;
+        }
 
 }
 

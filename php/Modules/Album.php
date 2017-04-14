@@ -82,12 +82,26 @@ final class Album {
 		return $album;
 
 	}
+        
+        public static function prepareDataTag($tag) {
+
+		// Init
+		$album = null;
+
+		// Set unchanged attributes
+		$album['id']     = $tag;
+		$album['title']     = $tag;
+		$album['public'] = 0;
+
+		return $album;
+
+	}
 
 	/**
 	 * @return array|false Returns an array of photos and album information or false on failure.
 	 */
 	public function get() {
-
+            
 		// Check dependencies
 		Validator::required(isset($this->albumIDs), __METHOD__);
 
@@ -118,12 +132,21 @@ final class Album {
 				break;
 
 			default:
-				$query  = Database::prepare(Database::get(), "SELECT * FROM ? WHERE id = '?' LIMIT 1", array(LYCHEE_TABLE_ALBUMS, $this->albumIDs));
+                            if(substr($this->albumIDs, 0,3) == 'tag') {
+                                $this->albumIDs = urldecode($this->albumIDs);
+                                $tag = explode("-",$this->albumIDs)[1];
+				$return = Album::prepareDataTag($tag);
+				$query  = Database::prepare(Database::get(), "SELECT id, title, tags, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE find_in_set('?', tags )" . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS, $tag));
+				break;
+                            } else {
+                                $query  = Database::prepare(Database::get(), "SELECT * FROM ? WHERE id = '?' LIMIT 1", array(LYCHEE_TABLE_ALBUMS, $this->albumIDs));
 				$albums = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
 				$return = $albums->fetch_assoc();
 				$return = Album::prepareData($return);
 				$query  = Database::prepare(Database::get(), "SELECT id, title, tags, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE album = '?' " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS, $this->albumIDs));
 				break;
+                            }
+				
 
 		}
 

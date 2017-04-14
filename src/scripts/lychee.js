@@ -157,12 +157,12 @@ lychee.load = function() {
 	let albumID = ''
 	let photoID = ''
 	let hash    = document.location.hash.replace('#', '').split('/')
-
+        
 	$('.no_content').remove()
 	contextMenu.close()
 	multiselect.close()
 
-	if (hash[0]!=null) albumID = hash[0]
+	if (hash[0]!=null) albumID = decodeURIComponent(hash[0])
 	if (hash[1]!=null) photoID = hash[1]
 
 	if (albumID && photoID) {

@@ -35,6 +35,10 @@ final class Validator {
 		return (preg_match('/^[0-9]{14}$/', $photoID)===1 ? true : false);
 
 	}
+        
+        public static function isTagID($tagID) {
+            return (preg_match('/^tag-/', $tagID)===1 ? true : false);
+        }
 
 }
 
