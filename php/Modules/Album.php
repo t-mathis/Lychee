@@ -148,6 +148,7 @@ final class Album {
         $tags = array();
 
         while ($photo = $photos->fetch_assoc()) {
+            //Break apart the tags string and add unique tags to the tags array for the album.
             foreach (explode(',', $photo['tags']) as $tag) {
                 if (!in_array($tag, $tags) && strlen($tag) > 0) {
                     $tags[] = $tag;
