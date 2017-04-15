@@ -5,10 +5,10 @@
 lychee = {
 
 	title           : document.title,
-	version         : '3.1.6',
-	versionCode     : '030106',
+	version         : '3.1.3',
+	versionCode     : '030103',
 
-	updatePath      : '//update.electerious.com/index.json',
+	updatePath      : 'index.json',
 	updateURL       : 'https://github.com/electerious/Lychee',
 	website         : 'http://lychee.electerious.com',
 
@@ -114,7 +114,7 @@ lychee.loginDialog = function() {
 	              <input class='text' name='username' autocomplete='username' type='text' placeholder='username' autocapitalize='off' autocorrect='off'>
 	              <input class='text' name='password' autocomplete='current-password' type='password' placeholder='password'>
 	          </p>
-	          <p class='version'>Lychee $${ lychee.version }<span> &#8211; <a target='_blank' href='$${ lychee.updateURL }'>Update available!</a><span></p>
+	          <p class='version'>Lychee $${ lychee.version }<span> &#8211; <a target='_blank' href='$${ lychee.updateURL }'>Update available!</a></span></p>
 	          `
 
 	basicModal.show({
