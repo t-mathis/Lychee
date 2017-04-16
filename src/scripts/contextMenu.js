@@ -98,39 +98,49 @@ contextMenu.albumMulti = function(albumIDs, e) {
 }
 
 contextMenu.albumTitle = function(albumID, e) {
-
-	api.post('Albums::get', {}, function(data) {
-
-		let items = []
-
-		if (data.albums && data.num>1) {
-
-			// Generate list of albums
-			$.each(data.albums, function() {
-
-				if (!this.thumbs[0]) this.thumbs[0] = 'src/images/no_cover.svg'
-				if (this.title==='') this.title = 'Untitled'
-
-				let html = lychee.html`<img class='cover' width='16' height='16' src='$${ this.thumbs[0] }'><div class='title'>$${ this.title }</div>`
-
-				if (this.id!=albumID) items.push({
-					title: html,
-					fn: () => lychee.goto(this.id)
-				})
-
-			})
-
-			items.unshift({ })
-
-		}
-
-		items.unshift({ title: build.iconic('pencil') + 'Rename', fn: () => album.setTitle([ albumID ]) })
-
-		basicContext.show(items, e.originalEvent, contextMenu.close)
-
-	})
-
-}
+    api.post('Albums::get', {}, function(data) {
+        let items = [];
+        if(album.isTagID(albumID)) {
+            if(data.tags && Object.keys(data.tags).length > 1) {
+                $.each(data.tags, function(tag, album) {
+                    if (!album.thumbs[0]) {
+                        album.thumbs[0] = 'src/images/no_cover.svg';
+                    }
+                    let html = lychee.html`<img class='cover' width='16' height='16' src='$${ album.thumbs[0] }'><div class='title'>${ tag }</div>`;
+                    if (album.id != albumID.substring(4)) {
+                        items.push({
+                            title: html,
+                            fn: () => lychee.goto("tag-" + album.id)
+                        });
+                    }
+                });
+            }
+        } else {
+            if (data.albums && data.num>1) {
+                // Generate list of albums
+                $.each(data.albums, function() {
+                    if (!this.thumbs[0]) {
+                        this.thumbs[0] = 'src/images/no_cover.svg';
+                    }
+                    if (this.title==='') {
+                        this.title = 'Untitled';
+                    }
+                    let html = lychee.html`<img class='cover' width='16' height='16' src='$${ this.thumbs[0] }'><div class='title'>$${ this.title }</div>`;
+                    if (this.id!=albumID) {
+                        items.push({
+                            title: html,
+                            fn: () => lychee.goto(this.id)
+                        });
+                    }
+                });
+                items.unshift({});
+            }
+            items.unshift({ title: build.iconic('pencil') + 'Rename', fn: () => album.setTitle([ albumID ]) });
+        }
+        
+        basicContext.show(items, e.originalEvent, contextMenu.close);
+    });
+};
 
 contextMenu.mergeAlbum = function(albumID, e) {
 

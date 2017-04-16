@@ -208,6 +208,7 @@ final class Albums {
                                 }
                             } else {
                                 $return[$tempTag] = array(
+                                    'id'     => $tempTag,
                                     'thumbs' => array(LYCHEE_URL_UPLOADS_THUMB . $row3->thumbUrl),
                                     'num'    => 1
                                 );

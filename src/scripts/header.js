@@ -136,15 +136,22 @@ header.setMode = function(mode) {
 			else                            $('#button_archive').show()
 
 			// Hide download button when not logged in and album not downloadable
-			if (lychee.publicMode===true && album.json.downloadable==='0') $('#button_archive').hide()
+			if (lychee.publicMode===true && album.json.downloadable==='0') {
+                            $('#button_archive').hide();
+                        } else {
+                            $('#button_archive').show();
+                        }
 
-			if (albumID==='s' || albumID==='f' || albumID==='r') {
-				$('#button_info_album, #button_trash_album, #button_share_album').hide()
-			} else if (albumID==='0') {
-				$('#button_info_album, #button_share_album').hide()
-				$('#button_trash_album').show()
-			} else {
-				$('#button_info_album, #button_trash_album, #button_share_album').show()
+			if (album.isSmartID(albumID)) {
+                            $('#button_info_album, #button_trash_album, #button_share_album').hide();
+                            if (albumID==='0') {
+                                $('#button_trash_album').show();
+                            }
+			} else if(album.isTagID(albumID)) {
+                            $('#button_info_album').show();
+                            $('#button_archive, #button_trash_album, #button_share_album').hide();
+                        } else {
+                            $('#button_info_album, #button_trash_album, #button_share_album').show();
 			}
 
 			return true
