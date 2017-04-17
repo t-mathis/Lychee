@@ -15,21 +15,21 @@ $result = Database::execute($connection, $query, 'update_030103', __LINE__);
 if ($result===false) Response::error('Could not change photos table DB engine!');
 
 
-// Change DB engine for Photos table
+// Change DB engine for Albums table
 $query  = Database::prepare($connection, "ALTER TABLE `?` ENGINE = InnoDB", array(LYCHEE_TABLE_ALBUMS));
 $result = Database::execute($connection, $query, 'update_030103', __LINE__);
 
 if ($result===false) Response::error('Could not change album table DB engine!');
 
 
-// Change DB engine for Photos table
+// Change DB engine for Log table
 $query  = Database::prepare($connection, "ALTER TABLE `?` ENGINE = InnoDB", array(LYCHEE_TABLE_LOG));
 $result = Database::execute($connection, $query, 'update_030103', __LINE__);
 
 if ($result===false) Response::error('Could not change logs table DB engine!');
 
 
-// Change DB engine for Photos table
+// Change DB engine for Settings table
 $query  = Database::prepare($connection, "ALTER TABLE `?` ENGINE = InnoDB", array(LYCHEE_TABLE_SETTINGS));
 $result = Database::execute($connection, $query, 'update_030103', __LINE__);
 

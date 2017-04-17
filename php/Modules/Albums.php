@@ -189,38 +189,42 @@ final class Albums {
 
 	}
         
-        private function getTagAlbums() {
-                // Initialize return var
-                $return = array();
+    private function getTagAlbums() {
+        // Initialize return var
+        $return = array();
 
-		$query  = Database::prepare(Database::get(), 'SELECT tags, thumbUrl FROM ? WHERE public = 0 and tags != "" ' . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
-		$tags = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
+        $query = Database::prepare(Database::get(), 'SELECT id, title, description, category FROM ? ', array(LYCHEE_TABLE_TAGS));
+        $tags = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
 
-		if ($tags === false) return false;
+        while ($tag = $tags->fetch_object()) {
+            $thumbsArray = array();
 
-                while($row3 = $tags->fetch_object()) {
-                        $tempTags = explode(',',$row3->tags);
-                        foreach($tempTags as $tempTag) {
-                            if(array_key_exists($tempTag, $return)) {
-                                $return[$tempTag]['num']++;
-                                if(count($return[$tempTag]['thumbs']) < 3) {
-                                    $return[$tempTag]['thumbs'][] = LYCHEE_URL_UPLOADS_THUMB . $row3->thumbUrl;
-                                }
-                            } else {
-                                $return[$tempTag] = array(
-                                    'id'     => $tempTag,
-                                    'thumbs' => array(LYCHEE_URL_UPLOADS_THUMB . $row3->thumbUrl),
-                                    'num'    => 1
-                                );
-                            }
-                        }
-		}
-                
-                ksort($return);
-                
-                // Return Tags
-		return $return;
+            $thumbsQuery = Database::prepare(Database::get(), 'SELECT thumbUrl FROM ? WHERE id IN (SELECT photoId FROM ? WHERE tagId = ? ORDER BY photoId ASC)', array(LYCHEE_TABLE_PHOTOS, LYCHEE_TABLE_PHOTOS_TO_TAGS, $tag->id));
+            $thumbsResult = Database::execute(Database::get(), $thumbsQuery, __METHOD__, __LINE__);
+
+            if ($thumbsResult === false) {
+                return false;
+            }
+
+            $count = 0;
+            while ($thumb = $thumbsResult->fetch_object()) {
+                if ($count < 3) {
+                    $thumbsArray[] = LYCHEE_URL_UPLOADS_THUMB . $thumb->thumbUrl;
+                }
+                $count++;
+            }
+
+            $return[$tag->title] = array(
+                'id' => $tag->title,
+                'thumbs' => $thumbsArray,
+                'num' => $count
+            );
         }
+        ksort($return);
+
+        // Return Tags
+        return $return;
+    }
 
 }
 

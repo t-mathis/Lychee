@@ -108,33 +108,33 @@ final class Album {
         switch ($this->albumIDs) {
             case 'f':
                 $return['public'] = '0';
-                $query = Database::prepare(Database::get(), "SELECT id, title, tags, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE star = 1 " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
+                $query = Database::prepare(Database::get(), "SELECT id, title, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE star = 1 " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
                 break;
             case 's':
                 $return['public'] = '0';
-                $query = Database::prepare(Database::get(), "SELECT id, title, tags, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE public = 1 " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
+                $query = Database::prepare(Database::get(), "SELECT id, title, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE public = 1 " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
                 break;
             case 'r':
                 $return['public'] = '0';
-                $query = Database::prepare(Database::get(), "SELECT id, title, tags, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE LEFT(id, 10) >= unix_timestamp(DATE_SUB(NOW(), INTERVAL 1 DAY)) " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
+                $query = Database::prepare(Database::get(), "SELECT id, title, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE LEFT(id, 10) >= unix_timestamp(DATE_SUB(NOW(), INTERVAL 1 DAY)) " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
                 break;
             case '0':
                 $return['public'] = '0';
-                $query = Database::prepare(Database::get(), "SELECT id, title, tags, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE album = 0 " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
+                $query = Database::prepare(Database::get(), "SELECT id, title, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE album = 0 " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
                 break;
             default:
                 if (substr($this->albumIDs, 0, 3) == 'tag') {
                     $this->albumIDs = urldecode($this->albumIDs);
                     $tag = explode("-", $this->albumIDs)[1];
                     $return = Album::prepareDataTag($tag);
-                    $query = Database::prepare(Database::get(), "SELECT id, title, tags, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE find_in_set('?', tags )" . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS, $tag));
+                    $query = Database::prepare(Database::get(), "SELECT id, title, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE id IN (SELECT photoId FROM ? WHERE tagId = (SELECT id FROM ? WHERE title = '?'))" . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS, LYCHEE_TABLE_PHOTOS_TO_TAGS, LYCHEE_TABLE_TAGS, $tag));
                     break;
                 } else {
                     $query = Database::prepare(Database::get(), "SELECT * FROM ? WHERE id = '?' LIMIT 1", array(LYCHEE_TABLE_ALBUMS, $this->albumIDs));
                     $albums = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
                     $return = $albums->fetch_assoc();
                     $return = Album::prepareData($return);
-                    $query = Database::prepare(Database::get(), "SELECT id, title, tags, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE album = '?' " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS, $this->albumIDs));
+                    $query = Database::prepare(Database::get(), "SELECT id, title, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE album = '?' " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS, $this->albumIDs));
                     break;
                 }
         }
@@ -148,15 +148,15 @@ final class Album {
         $tags = array();
 
         while ($photo = $photos->fetch_assoc()) {
+            // Turn data from the database into a front-end friendly format
+            $photo = Photo::prepareData($photo);
+            
             //Break apart the tags string and add unique tags to the tags array for the album.
             foreach (explode(',', $photo['tags']) as $tag) {
                 if (!in_array($tag, $tags) && strlen($tag) > 0) {
                     $tags[] = $tag;
                 }
             }
-
-            // Turn data from the database into a front-end friendly format
-            $photo = Photo::prepareData($photo);
 
             // Set previous and next photoID for navigation purposes
             $photo['previousPhoto'] = $previousPhotoID;

@@ -238,8 +238,8 @@ final class Photo {
 
 		}
 
-		$values = array(LYCHEE_TABLE_PHOTOS, $id, $info['title'], $photo_name, $info['description'], $info['tags'], $info['type'], $info['width'], $info['height'], $info['size'], $info['iso'], $info['aperture'], $info['make'], $info['model'], $info['shutter'], $info['focal'], $info['takestamp'], $path_thumb, $albumID, $public, $star, $checksum, $medium);
-		$query  = Database::prepare(Database::get(), "INSERT INTO ? (id, title, url, description, tags, type, width, height, size, iso, aperture, make, model, shutter, focal, takestamp, thumbUrl, album, public, star, checksum, medium) VALUES ('?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?')", $values);
+		$values = array(LYCHEE_TABLE_PHOTOS, $id, $info['title'], $photo_name, $info['description'], $info['type'], $info['width'], $info['height'], $info['size'], $info['iso'], $info['aperture'], $info['make'], $info['model'], $info['shutter'], $info['focal'], $info['takestamp'], $path_thumb, $albumID, $public, $star, $checksum, $medium);
+		$query  = Database::prepare(Database::get(), "INSERT INTO ? (id, title, url, description, type, width, height, size, iso, aperture, make, model, shutter, focal, takestamp, thumbUrl, album, public, star, checksum, medium) VALUES ('?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?', '?')", $values);
 		$result = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
 
 		if ($result===false) {
@@ -450,6 +450,7 @@ final class Photo {
 			// Photo too small or
 			// Medium is deactivated or
 			// Imagick not installed
+                        Log::notice(Database::get(), __METHOD__, __LINE__, 'Skipped creation of medium-photo, because photo is too small, medium is deactivated, or Imagick is not installed.');
 			$error = true;
 
 		}
@@ -637,8 +638,8 @@ final class Photo {
 	 */
 	public static function prepareData(array $data) {
 
-		// Excepts the following:
-		// (array) $data = ['id', 'title', 'tags', 'public', 'star', 'album', 'thumbUrl', 'takestamp', 'url', 'medium']
+		// Accepts the following:
+		// (array) $data = ['id', 'title', 'public', 'star', 'album', 'thumbUrl', 'takestamp', 'url', 'medium']
 
 		// Init
 		$photo = null;
@@ -646,7 +647,7 @@ final class Photo {
 		// Set unchanged attributes
 		$photo['id']     = $data['id'];
 		$photo['title']  = $data['title'];
-		$photo['tags']   = $data['tags'];
+		$photo['tags']   = Photo::getTagsForPhoto($data['id']);
 		$photo['public'] = $data['public'];
 		$photo['star']   = $data['star'];
 		$photo['album']  = $data['album'];
@@ -677,6 +678,26 @@ final class Photo {
 		return $photo;
 
 	}
+        
+    /**
+    * Get a comma separate list of tags for a photo.
+    * @return string|boolean Comma separated list of tags.
+    */
+    public static function getTagsForPhoto($photoId) {
+        // Get photo
+        $query = Database::prepare(Database::get(), "SELECT title FROM ? WHERE id IN (SELECT tagId FROM ? WHERE photoId = '?')", array(LYCHEE_TABLE_TAGS, LYCHEE_TABLE_PHOTOS_TO_TAGS, $photoId));
+        $tags = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
+
+        if ($tags === false) {
+            return false;
+        }
+        
+        $allTags = array();
+        while ($tag = $tags->fetch_object()) {
+            $allTags[] = $tag->title;
+        }
+        return implode(',', $allTags);
+    }
 
 	/**
 	 * @return array|false Returns an array with information about the photo or false on failure.
@@ -707,6 +728,8 @@ final class Photo {
 			Log::error(Database::get(), __METHOD__, __LINE__, 'Could not find specified photo');
 			return false;
 		}
+                
+                $photo['tags'] = Photo::getTagsForPhoto($photo['id']);
 
 		// Parse photo
 		$photo['sysdate'] = strftime('%d %b. %Y', substr($photo['id'], 0, -4));
@@ -791,7 +814,6 @@ final class Photo {
 		$return['focal']       = '';
 		$return['takestamp']   = 0;
 		$return['lens']        = '';
-		$return['tags']        = '';
 		$return['position']    = '';
 		$return['latitude']    = '';
 		$return['longitude']   = '';
@@ -1168,79 +1190,135 @@ final class Photo {
 		return $this->setAlbum(0);
 	}
 
-	/**
-	 * Sets the tags of a photo.
-	 * @return boolean Returns true when successful.
-	 */
-	public function setTags($tags) {
+    /**
+     * Sets the tags of a photo.
+     * @return boolean Returns true when successful.
+     */
+    public function setTags($tags) {
+        // Accepts the following:
+        // (string) $tags = Comma separated list of tags
+        
+        // Check dependencies
+        Validator::required(isset($this->photoIDs), __METHOD__);
 
-		// Excepts the following:
-		// (string) $tags = Comma separated list of tags with a maximum length of 1000 chars
+        // Call plugins
+        Plugins::get()->activate(__METHOD__, 0, func_get_args());
 
-		// Check dependencies
-		Validator::required(isset($this->photoIDs), __METHOD__);
+        // Parse tags
+        $tags = preg_replace('/(\ ,\ )|(\ ,)|(,\ )|(,{1,}\ {0,})|(,$|^,)/', ',', $tags);
+        $tags = preg_replace('/,$|^,|(\ ){0,}$/', '', $tags);
+        $tags = explode(',', $tags);
+        $photos = explode(',', $this->photoIDs);
+        
+        // Set tags
+        $allTags = array();
+        
+        $query = Database::prepare(Database::get(), "DELETE FROM ? WHERE photoId IN (?)", array(LYCHEE_TABLE_PHOTOS_TO_TAGS, $this->photoIDs));
+        $result = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
+        
+        if ($result === false) return false;
+            
+        foreach($photos as $photo) {
+            foreach($tags as $tag) {
+                if(!array_key_exists($tag, $allTags)) {
+                    $query = Database::prepare(Database::get(), "SELECT id FROM ? WHERE title = '?'", array(LYCHEE_TABLE_TAGS, $tag));
+                    $result = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
+                    
+                    if($result->num_rows === 0) {
+                        //Insert Tag
+                        $query = Database::prepare(Database::get(), "INSERT INTO ? (title) VALUES ('?')", array(LYCHEE_TABLE_TAGS, $tag));
+                        $result = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
+                        if ($result === false) {
+                            return false;
+                        }
 
-		// Call plugins
-		Plugins::get()->activate(__METHOD__, 0, func_get_args());
+                        //Get the new inserted ID.
+                        $tagId = Database::insertId(Database::get(), __METHOD__, __LINE__);
+                        if ($tagId === false) {
+                            return false;
+                        }
+                    } else {
+                        //Get the existing ID.
+                        $tagId = $result->fetch_object()->id;
+                    }
+                    //Add it to the array.
+                    $allTags[$tag] = $tagId;
+                }
+                // Insert Photos To Tags
+                $query = Database::prepare(Database::get(), "INSERT INTO ? (photoId, tagId) VALUES ('?', '?')", array(LYCHEE_TABLE_PHOTOS_TO_TAGS, $photo, $allTags[$tag]));
+                $result = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
+                if ($result === false) {
+                    return false;
+                }
+            }
+        }
+        
+        // Call plugins
+        Plugins::get()->activate(__METHOD__, 1, func_get_args());
 
-		// Parse tags
-		$tags = preg_replace('/(\ ,\ )|(\ ,)|(,\ )|(,{1,}\ {0,})|(,$|^,)/', ',', $tags);
-		$tags = preg_replace('/,$|^,|(\ ){0,}$/', '', $tags);
+        
+        return true;
+    }
 
-		// Set tags
-		$query  = Database::prepare(Database::get(), "UPDATE ? SET tags = '?' WHERE id IN (?)", array(LYCHEE_TABLE_PHOTOS, $tags, $this->photoIDs));
-		$result = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
+    /**
+     * Duplicates a photo.
+     * @return boolean Returns true when successful.
+     */
+    public function duplicate() {
 
-		// Call plugins
-		Plugins::get()->activate(__METHOD__, 1, func_get_args());
+        // Check dependencies
+        Validator::required(isset($this->photoIDs), __METHOD__);
 
-		if ($result===false) return false;
-		return true;
+        // Call plugins
+        Plugins::get()->activate(__METHOD__, 0, func_get_args());
 
-	}
+        // Init vars
+        $error = false;
 
-	/**
-	 * Duplicates a photo.
-	 * @return boolean Returns true when successful.
-	 */
-	public function duplicate() {
+        // Get photos
+        $query = Database::prepare(Database::get(), "SELECT id, checksum FROM ? WHERE id IN (?)", array(LYCHEE_TABLE_PHOTOS, $this->photoIDs));
+        $photos = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
 
-		// Check dependencies
-		Validator::required(isset($this->photoIDs), __METHOD__);
+        if ($photos === false)
+            return false;
 
-		// Call plugins
-		Plugins::get()->activate(__METHOD__, 0, func_get_args());
+        // For each photo
+        while ($photo = $photos->fetch_object()) {
 
-		// Init vars
-		$error = false;
+            // Generate id
+            $id = generateID();
 
-		// Get photos
-		$query  = Database::prepare(Database::get(), "SELECT id, checksum FROM ? WHERE id IN (?)", array(LYCHEE_TABLE_PHOTOS, $this->photoIDs));
-		$photos = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
+            // Duplicate entry
+            $values = array(LYCHEE_TABLE_PHOTOS, $id, LYCHEE_TABLE_PHOTOS, $photo->id);
+            $query = Database::prepare(Database::get(), "INSERT INTO ? (id, title, url, description, type, width, height, size, iso, aperture, make, model, shutter, focal, takestamp, thumbUrl, album, public, star, checksum) SELECT '?' AS id, title, url, description, type, width, height, size, iso, aperture, make, model, shutter, focal, takestamp, thumbUrl, album, public, star, checksum FROM ? WHERE id = '?'", $values);
+            $result = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
+            if ($result === false) {
+                $error = true;
+            }
+            
+            $photosToTagsQuery = Database::prepare(Database::get(), "SELECT tagId FROM ? WHERE photoId = '?'", array(LYCHEE_TABLE_PHOTOS_TO_TAGS, $photo->id));
+            $photosToTagsResult = Database::execute(Database::get(), $photosToTagsQuery, __METHOD__, __LINE__);
+            if ($photosToTagsResult === false) {
+                $error = true;
+            }
+            
+            while ($tagId = $photosToTagsResult->fetch_object()) {
+                // Insert Photos To Tags
+                $newPhotosToTagsQuery = Database::prepare(Database::get(), "INSERT INTO ? (photoId, tagId) VALUES ('?', '?')", array(LYCHEE_TABLE_PHOTOS_TO_TAGS, $id, $tagId->tagId));
+                $newPhotosToTagsResult = Database::execute(Database::get(), $newPhotosToTagsQuery, __METHOD__, __LINE__);
+                if ($newPhotosToTagsResult === false) {
+                    $error = true;
+                }
+            }
+        }
 
-		if ($photos===false) return false;
+        if ($error === true) {
+            return false;
+        }
+        return true;
+    }
 
-		// For each photo
-		while ($photo = $photos->fetch_object()) {
-
-			// Generate id
-			$id = generateID();
-
-			// Duplicate entry
-			$values = array(LYCHEE_TABLE_PHOTOS, $id, LYCHEE_TABLE_PHOTOS, $photo->id);
-			$query  = Database::prepare(Database::get(), "INSERT INTO ? (id, title, url, description, tags, type, width, height, size, iso, aperture, make, model, shutter, focal, takestamp, thumbUrl, album, public, star, checksum) SELECT '?' AS id, title, url, description, tags, type, width, height, size, iso, aperture, make, model, shutter, focal, takestamp, thumbUrl, album, public, star, checksum FROM ? WHERE id = '?'", $values);
-			$result = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
-
-			if ($result===false) $error = true;
-
-		}
-
-		if ($error===true) return false;
-		return true;
-
-	}
-
-	/**
+    /**
 	 * Deletes a photo with all its data and files.
 	 * @return boolean Returns true when successful.
 	 */

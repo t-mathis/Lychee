@@ -42,6 +42,8 @@ function defineTablePrefix($dbTablePrefix) {
 	define('LYCHEE_TABLE_LOG', $dbTablePrefix . 'lychee_log');
 	define('LYCHEE_TABLE_PHOTOS', $dbTablePrefix . 'lychee_photos');
 	define('LYCHEE_TABLE_SETTINGS', $dbTablePrefix . 'lychee_settings');
+	define('LYCHEE_TABLE_TAGS', $dbTablePrefix . 'lychee_tags');
+	define('LYCHEE_TABLE_PHOTOS_TO_TAGS', $dbTablePrefix . 'lychee_photos_to_tags');
 
 }
 
