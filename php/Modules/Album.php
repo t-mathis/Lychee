@@ -106,19 +106,23 @@ final class Album {
 
         // Get album information
         switch ($this->albumIDs) {
-            case 'f':
+            case 's': // Starred
                 $return['public'] = '0';
                 $query = Database::prepare(Database::get(), "SELECT id, title, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE star = 1 " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
                 break;
-            case 's':
+            case 'p': // Public
                 $return['public'] = '0';
                 $query = Database::prepare(Database::get(), "SELECT id, title, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE public = 1 " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
                 break;
-            case 'r':
+            case 'r': //Recent
                 $return['public'] = '0';
                 $query = Database::prepare(Database::get(), "SELECT id, title, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE LEFT(id, 10) >= unix_timestamp(DATE_SUB(NOW(), INTERVAL 1 DAY)) " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
                 break;
-            case '0':
+            case 'u': // Untagged
+                $return['public'] = '0';
+                $query = Database::prepare(Database::get(), "SELECT id, title, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE id NOT IN (SELECT distinct(photoId) FROM ?) " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS, LYCHEE_TABLE_PHOTOS_TO_TAGS));
+                break;
+            case '0': // Unsorted
                 $return['public'] = '0';
                 $query = Database::prepare(Database::get(), "SELECT id, title, public, star, album, thumbUrl, takestamp, url, medium FROM ? WHERE album = 0 " . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS));
                 break;
@@ -217,17 +221,21 @@ final class Album {
 
 		// Photos query
 		switch($this->albumIDs) {
-			case 's':
-				$photos   = Database::prepare(Database::get(), 'SELECT title, url FROM ? WHERE public = 1', array(LYCHEE_TABLE_PHOTOS));
-				$zipTitle = 'Public';
-				break;
 			case 'f':
 				$photos   = Database::prepare(Database::get(), 'SELECT title, url FROM ? WHERE star = 1', array(LYCHEE_TABLE_PHOTOS));
 				$zipTitle = 'Starred';
 				break;
+			case 'p':
+				$photos   = Database::prepare(Database::get(), 'SELECT title, url FROM ? WHERE public = 1', array(LYCHEE_TABLE_PHOTOS));
+				$zipTitle = 'Public';
+				break;
 			case 'r':
 				$photos   = Database::prepare(Database::get(), 'SELECT title, url FROM ? WHERE LEFT(id, 10) >= unix_timestamp(DATE_SUB(NOW(), INTERVAL 1 DAY)) GROUP BY checksum', array(LYCHEE_TABLE_PHOTOS));
 				$zipTitle = 'Recent';
+				break;
+			case 'u':
+				$photos   = Database::prepare(Database::get(), 'SELECT title, url FROM ? WHERE id NOT IN (SELECT distinct(photoId) FROM ?)', array(LYCHEE_TABLE_PHOTOS, LYCHEE_TABLE_PHOTOS_TO_TAGS));
+				$zipTitle = 'Untagged';
 				break;
 			default:
 				$photos   = Database::prepare(Database::get(), "SELECT title, url FROM ? WHERE album = '?'", array(LYCHEE_TABLE_PHOTOS, $this->albumIDs));
@@ -394,7 +402,7 @@ final class Album {
 		// Call plugins
 		Plugins::get()->activate(__METHOD__, 0, func_get_args());
 
-		if ($this->albumIDs==='0'||$this->albumIDs==='s'||$this->albumIDs==='f') return false;
+		if ($this->albumIDs==='0'||$this->albumIDs==='p'||$this->albumIDs==='f') return false;
 
 		// Execute query
 		$query  = Database::prepare(Database::get(), "SELECT public FROM ? WHERE id = '?' LIMIT 1", array(LYCHEE_TABLE_ALBUMS, $this->albumIDs));
@@ -430,7 +438,7 @@ final class Album {
 		// Call plugins
 		Plugins::get()->activate(__METHOD__, 0, func_get_args());
 
-		if ($this->albumIDs==='0'||$this->albumIDs==='s'||$this->albumIDs==='f'||$this->albumIDs==='r') return false;
+		if ($this->albumIDs==='0'||$this->albumIDs==='p'||$this->albumIDs==='f'||$this->albumIDs==='r') return false;
 
 		// Execute query
 		$query  = Database::prepare(Database::get(), "SELECT downloadable FROM ? WHERE id = '?' LIMIT 1", array(LYCHEE_TABLE_ALBUMS, $this->albumIDs));

@@ -79,9 +79,17 @@ albums._createSmartAlbums = function(data) {
 		unsorted : '1',
 		thumbs   : data.unsorted.thumbs
 	}
+        
+        data.untagged = {
+		id      : 'u',
+		title   : 'Untagged',
+		sysdate : data.untagged.num + ' photos',
+		untagged: '1',
+		thumbs  : data.untagged.thumbs
+	}
 
 	data.starred = {
-		id      : 'f',
+		id      : 's',
 		title   : 'Starred',
 		sysdate : data.starred.num + ' photos',
 		star    : '1',
@@ -89,7 +97,7 @@ albums._createSmartAlbums = function(data) {
 	}
 
 	data.public = {
-		id      : 's',
+		id      : 'p',
 		title   : 'Public',
 		sysdate : data.public.num + ' photos',
 		public  : '1',

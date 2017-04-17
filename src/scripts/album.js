@@ -3,7 +3,7 @@
  */
 
 album = {
-    smartIDs: ['0', 'f', 's', 'r'],
+    smartIDs: ['0', 's', 'p', 'r', 'u'],
     json: null
 }
 

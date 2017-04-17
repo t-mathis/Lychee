@@ -33,12 +33,14 @@ view.albums = {
 			if (lychee.publicMode===false) {
 
 				albums.parse(albums.json.smartalbums.unsorted)
+				albums.parse(albums.json.smartalbums.untagged)
 				albums.parse(albums.json.smartalbums.public)
 				albums.parse(albums.json.smartalbums.starred)
 				albums.parse(albums.json.smartalbums.recent)
 
 				smartData = build.divider('Smart Albums') +
                                         build.album(albums.json.smartalbums.unsorted) + 
+                                        build.album(albums.json.smartalbums.untagged) + 
                                         build.album(albums.json.smartalbums.public) + 
                                         build.album(albums.json.smartalbums.starred) + 
                                         build.album(albums.json.smartalbums.recent);
@@ -133,14 +135,17 @@ view.album = {
 		if ((visible.album() || !album.json.init) && !visible.photo()) {
 
 			switch (album.getID()) {
-				case 'f':
+				case 's':
 					lychee.setTitle('Starred', false)
 					break
-				case 's':
+				case 'p':
 					lychee.setTitle('Public', false)
 					break
 				case 'r':
 					lychee.setTitle('Recent', false)
+					break
+				case 'u':
+					lychee.setTitle('Untagged', false)
 					break
 				case '0':
 					lychee.setTitle('Unsorted', false)

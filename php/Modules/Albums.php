@@ -91,6 +91,7 @@ final class Albums {
 		// Initialize return var
 		$return = array(
 			'unsorted' => null,
+			'untagged' => null,
 			'public'   => null,
 			'starred'  => null,
 			'recent'   => null
@@ -114,6 +115,28 @@ final class Albums {
 		while($row = $unsorted->fetch_object()) {
 			if ($i<3) {
 				$return['unsorted']['thumbs'][$i] = LYCHEE_URL_UPLOADS_THUMB . $row->thumbUrl;
+				$i++;
+			} else break;
+		}
+
+		/**
+		 * Untagged
+		 */
+
+		$query    = Database::prepare(Database::get(), 'SELECT thumbUrl FROM ? WHERE id NOT IN (SELECT distinct(photoId) FROM ?)' . Settings::get()['sortingPhotos'], array(LYCHEE_TABLE_PHOTOS, LYCHEE_TABLE_PHOTOS_TO_TAGS));
+		$untagged = Database::execute(Database::get(), $query, __METHOD__, __LINE__);
+		$i        = 0;
+
+		if ($untagged===false) return false;
+
+		$return['untagged'] = array(
+			'thumbs' => array(),
+			'num'    => $untagged->num_rows
+		);
+
+		while($row = $untagged->fetch_object()) {
+			if ($i<3) {
+				$return['untagged']['thumbs'][$i] = LYCHEE_URL_UPLOADS_THUMB . $row->thumbUrl;
 				$i++;
 			} else break;
 		}
