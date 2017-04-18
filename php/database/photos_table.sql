@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS `?` (
   `title` varchar(100) NOT NULL DEFAULT '',
   `description` varchar(1000) DEFAULT '',
   `url` varchar(100) NOT NULL,
-  `tags` varchar(1000) NOT NULL DEFAULT '',
   `public` tinyint(1) NOT NULL,
   `type` varchar(10) NOT NULL,
   `width` int(11) NOT NULL,
