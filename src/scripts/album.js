@@ -150,6 +150,42 @@ album.add = function() {
 
 }
 
+album.tagAdd = function() {
+    const action = function(data) {
+        let title = data.title;
+
+        const isNumber = (n) => (!isNaN(parseFloat(n)) && isFinite(n));
+        basicModal.close();
+
+        let params = {
+            title
+        }
+
+        api.post('Tag::add', params, function(data) {
+            if (data !== false) {
+                albums.refresh();
+                lychee.goto("tag-" + data.title);
+            } else {
+                lychee.error(null, params, data);
+            }
+        });
+    }
+
+    basicModal.show({
+        body: `<p>Enter a title for the new tag: <input class='text' name='title' type='text' maxlength='50' placeholder='Title' value='Untitled'></p>`,
+        buttons: {
+            action: {
+                title: 'Create Tag',
+                fn: action
+            },
+            cancel: {
+                title: 'Cancel',
+                fn: basicModal.close
+            }
+        }
+    });
+}
+
 album.delete = function(albumIDs) {
 
 	let action = {}

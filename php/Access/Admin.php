@@ -9,6 +9,7 @@ use Lychee\Modules\Photo;
 use Lychee\Modules\Response;
 use Lychee\Modules\Session;
 use Lychee\Modules\Settings;
+use Lychee\Modules\Tag;
 use Lychee\Modules\Validator;
 
 final class Admin extends Access {
@@ -57,6 +58,9 @@ final class Admin extends Access {
 			case 'Settings::setLogin':      self::setLoginAction(); break;
 			case 'Settings::setSorting':    self::setSortingAction(); break;
 			case 'Settings::setDropboxKey': self::setDropboxKeyAction(); break;
+                        
+			// Tag functions
+			case 'Tag::add':                self::addTagAction(); break;
 
 			// $_GET functions
 			case 'Album::getArchive':       self::getAlbumArchiveAction(); break;
@@ -140,7 +144,17 @@ final class Admin extends Access {
 		Response::json($album->merge());
 
 	}
+        
+        // Tag functions
+	private static function addTagAction() {
 
+		Validator::required(isset($_POST['title']), __METHOD__);
+
+		$tag = new Tag(null);
+		Response::json($tag->add($_POST['title']));
+
+	}
+        
 	// Photo functions
 
 	private static function getPhotoAction() {

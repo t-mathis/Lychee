@@ -100,7 +100,7 @@
 			transform: rotate(5deg) translateY(-8px) translateX(12px);
 		}
 	}
-        .albums {
+        .albums, .tags {
             width:100%;
             display: flex;
             flex-wrap: wrap;

@@ -64,13 +64,19 @@ contextMenu.album = function(albumID, e) {
 }
 
 contextMenu.albums = function(e) {
-
 	let items = [
 		{ title: build.iconic('folder') + 'New Album', fn: album.add }
-	]
+	];
 
 	basicContext.show(items, e.originalEvent)
+}
 
+contextMenu.tags = function(e) {
+	let items = [
+		{ title: build.iconic('tag') + 'New Tag', fn: album.tagAdd }
+	];
+
+	basicContext.show(items, e.originalEvent)
 }
 
 contextMenu.albumMulti = function(albumIDs, e) {

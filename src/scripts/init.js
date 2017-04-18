@@ -104,6 +104,7 @@ $(document).ready(function() {
         
         
 		.on('contextmenu', '.albums', function(e) { contextMenu.albums(e);})
+		.on('contextmenu', '.tags', function(e) { contextMenu.tags(e);})
 
 		// Upload
 		.on('change', '#upload_files', function() { basicModal.close(); upload.start.local(this.files) })

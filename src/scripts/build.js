@@ -78,15 +78,12 @@ build.album = function(data) {
 
 }
 
-build.albums = function(data) {
-        let html = '';
-        
-        html += lychee.html`
-                <div class='albums'>
-                    ${ data }
-                </div>`;
-        
-        return html;
+build.albumContainer = function(data, type) {
+    let html = '';
+
+    html += lychee.html`<div class='${ type }'>${ data }</div>`;
+
+    return html;
 }
 
 build.photo = function(data) {

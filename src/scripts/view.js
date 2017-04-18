@@ -5,115 +5,94 @@
 view = {}
 
 view.albums = {
+    init: function() {
+        view.albums.title();
+        view.albums.content.init();
+    },
+    title: function() {
+        lychee.setTitle('Albums', false);
+    },
+    content: {
+        scrollPosition: 0,
+        init: function() {
+            let smartData = '';
+            let albumsData = '';
+            let tagsData = '';
 
-	init: function() {
+            // Smart Albums
+            if (lychee.publicMode === false) {
+                albums.parse(albums.json.smartalbums.unsorted);
+                albums.parse(albums.json.smartalbums.untagged);
+                albums.parse(albums.json.smartalbums.public);
+                albums.parse(albums.json.smartalbums.starred);
+                albums.parse(albums.json.smartalbums.recent);
 
-		view.albums.title()
-		view.albums.content.init()
+                smartData = build.divider('Smart Albums') +
+                    build.album(albums.json.smartalbums.unsorted) +
+                    build.album(albums.json.smartalbums.untagged) +
+                    build.album(albums.json.smartalbums.public) +
+                    build.album(albums.json.smartalbums.starred) +
+                    build.album(albums.json.smartalbums.recent);
 
-	},
+            }
 
-	title: function() {
+            // Albums
+            if (albums.json.albums && albums.json.num !== 0) {
+                $.each(albums.json.albums, function() {
+                    albums.parse(this);
+                    albumsData += build.album(this);
+                });
 
-		lychee.setTitle('Albums', false)
+                // Add divider
+                if (lychee.publicMode === false) {
+                    albumsData = build.divider('Albums') + build.albumContainer(albumsData, 'albums');
+                }
+            }
 
-	},
+            // Tags
+            if (albums.json.tags && Object.keys(albums.json.tags).length > 0) {
+                $.each(albums.json.tags, function() {
+                    albums.parse(this);
+                    tagsData += build.album(this);
+                });
 
-	content: {
+                // Add divider
+                if (lychee.publicMode === false) {
+                    tagsData = build.divider('Tags') + build.albumContainer(tagsData, 'tags');
+                }
+            }
 
-		scrollPosition: 0,
+            if (smartData === '' && albumsData === '' && tagsData === '') {
+                lychee.content.html('');
+                $('body').append(build.no_content('eye'));
+            } else {
+                lychee.content.html(smartData + albumsData + tagsData);
+            }
 
-		init: function() {
+            // Restore scroll position
+            if (view.albums.content.scrollPosition != null && view.albums.content.scrollPosition !== 0) {
+                $(document).scrollTop(view.albums.content.scrollPosition);
+            }
+        },
+        title: function(albumID) {
+            let title = albums.getByID(albumID).title;
+            title = lychee.escapeHTML(title);
 
-			let smartData = '';
-			let albumsData = '';
-                        let tagsData = '';
-
-			// Smart Albums
-			if (lychee.publicMode===false) {
-
-				albums.parse(albums.json.smartalbums.unsorted)
-				albums.parse(albums.json.smartalbums.untagged)
-				albums.parse(albums.json.smartalbums.public)
-				albums.parse(albums.json.smartalbums.starred)
-				albums.parse(albums.json.smartalbums.recent)
-
-				smartData = build.divider('Smart Albums') +
-                                        build.album(albums.json.smartalbums.unsorted) + 
-                                        build.album(albums.json.smartalbums.untagged) + 
-                                        build.album(albums.json.smartalbums.public) + 
-                                        build.album(albums.json.smartalbums.starred) + 
-                                        build.album(albums.json.smartalbums.recent);
-
-			}
-
-			// Albums
-			if (albums.json.albums && albums.json.num!==0) {
-
-				$.each(albums.json.albums, function() {
-					albums.parse(this)
-					albumsData += build.album(this)
-				})
-
-				// Add divider
-				if (lychee.publicMode===false) albumsData = build.divider('Albums') + build.albums(albumsData)
-
-			}
-
-			// Tags
-			if (albums.json.tags && Object.keys(albums.json.tags).length > 0) {
-
-				$.each(albums.json.tags, function() {
-					albums.parse(this)
-					tagsData += build.album(this)
-				})
-
-				// Add divider
-				if (lychee.publicMode===false) tagsData = build.divider('Tags') + build.albums(tagsData)
-
-			}
-
-			if (smartData==='' && albumsData==='' && tagsData==='') {
-				lychee.content.html('')
-				$('body').append(build.no_content('eye'))
-			} else {
-				lychee.content.html(smartData + albumsData + tagsData)
-			}
-
-			// Restore scroll position
-			if (view.albums.content.scrollPosition!=null && view.albums.content.scrollPosition!==0) {
-				$(document).scrollTop(view.albums.content.scrollPosition)
-			}
-
-		},
-
-		title: function(albumID) {
-
-			let title = albums.getByID(albumID).title
-
-			title = lychee.escapeHTML(title)
-
-			$('.album[data-id="' + albumID + '"] .overlay h1')
-				.html(title)
-				.attr('title', title)
-
-		},
-
-		delete: function(albumID) {
-
-			$('.album[data-id="' + albumID + '"]').css('opacity', 0).animate({
-				width      : 0,
-				marginLeft : 0
-			}, 300, function() {
-				$(this).remove()
-				if (albums.json.num<=0) lychee.content.find('.divider:last-child').remove()
-			})
-
-		}
-
-	}
-
-}
+            $('.album[data-id="' + albumID + '"] .overlay h1')
+                .html(title)
+                .attr('title', title);
+        },
+        delete: function(albumID) {
+            $('.album[data-id="' + albumID + '"]').css('opacity', 0).animate({
+                width: 0,
+                marginLeft: 0
+            }, 300, function() {
+                $(this).remove();
+                if (albums.json.num <= 0) lychee.content.find('.divider:last-child').remove();
+            });
+        }
+    }
+};
 
 view.album = {
 
